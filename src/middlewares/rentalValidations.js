@@ -1,6 +1,6 @@
 import db from "../config/database.js";
 
-export async function ReturnDateValidator(req,res,next){
+export async function returnDateValidator(req,res,next){
     const { id } = req.params;
     try{
         const rent = await db.query('SELECT * FROM rentals WHERE id = $1', [id]);
