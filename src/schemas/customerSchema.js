@@ -3,10 +3,10 @@ import JoiImport from 'joi';
 const Joi = JoiImport.extend(DateExtension);
 
 const customerSchema = Joi.object({
-    name: Joi.string().required(),
-    phone: Joi.string().regex(/^\d{2}-\d{5}-\d{4}$/).required(),
-    cpf: Joi.string().required(),
-    birthday: Joi.date().format('DD/MM/YYYY').max('now')
+    name: Joi.string().min(3).required(),
+    phone: Joi.string().min(10).max(11).pattern(/^[0-9]+$/).required(),
+    cpf: Joi.string().length(11).pattern(/^[0-9]+$/).required(),
+    birthday: Joi.date().max('now')
 })
 
 export default customerSchema;
