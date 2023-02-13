@@ -56,13 +56,16 @@ export async function insertRental(req, res) {
 export async function finishRental(req, res) {
     const { id } = req.params;
     const dateNow = dayjs();
-
+    
     try {
         const rentById = await db.query('SELECT * FROM rentals WHERE id = $1', [id]);
         if (rentById.rows.length === 0) return res.sendStatus(404);
         if (rentById.rows[0].returnDate !== null) return res.sendStatus(400);
 
-        const delayFee = dateNow - rentById.rows[0].rentDate;
+        const pricePerDay = rentById.rows[0].originalPrice / rentById.rows[0].daysRented;
+        const daysDiff = Math.ceil(dateNow.diff(rentById.rows[0].rentDate, 'hours') / 24) - rentById.rows[0].daysRented;
+
+        const delayFee = daysDiff > 0 ? (daysDiff * pricePerDay):0;
         await db.query(`UPDATE rentals SET ("returnDate", "delayFee") = ($1, $2) WHERE id = $3;`, [dateNow, delayFee, id]);
         res.send();
     } catch (err) {
