@@ -39,9 +39,13 @@ export async function insertRental(req, res) {
 export async function finishRental(req, res) {
     const { id } = req.params;
     const dateNow = dayjs();
-    const delayFee = 1;
+    
     try {
-
+        const rentById = await db.query('SELECT * FROM rentals WHERE id = $1', [id]);
+        if (rentById.rows.length === 0) return res.sendStatus(404);
+        if (rentById.rows[0].returnDate !== null) return res.sendStatus(400);
+        const delayFee = rentById.rows[0].rentDate - dateNow;
+        await db.query(`UPDATE rentals SET ("returnDate", "delayFee") = ($1, $2) WHERE id = $;`,[dateNow, delayFee]);
         res.send();
     } catch (err) {
         return res.status(500).send(err.message);
@@ -51,6 +55,9 @@ export async function finishRental(req, res) {
 export async function deleteRental(req, res) {
     const { id } = req.params;
     try {
+        const rentById = await db.query('SELECT * FROM rentals WHERE id = $1', [id]);
+        if (rentById.rows.length === 0) return res.sendStatus(404);
+        if (rentById.rows[0].returnDate === null) return res.sendStatus(400);
         await db.query('DELETE FROM rentals WHERE id = $1;', [id]);
         res.send();
     } catch (err) {
