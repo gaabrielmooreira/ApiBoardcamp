@@ -3,7 +3,24 @@ import db from "../config/database.js";
 
 export async function getRentals(_, res) {
     try {
-        const result = await db.query("SELECT * FROM rentals;");
+        const result = await db.query(
+            `
+                SELECT rentals.*,
+                    JSON_BUILD_OBJECT(
+                        'id', customers.id,
+                        'name', customers.name
+                    ) AS customer,
+                    JSON_BUILD_OBJECT(
+                        'id', games.id,
+                        'name', games.name
+                    ) AS game
+                FROM rentals
+                JOIN games
+                ON games.id = rentals."gameId"
+                JOIN customers
+                ON customers.id = rentals."customerId";
+            `
+        );
         res.send(result.rows);
     } catch (err) {
         return res.status(500).send(err.message);
