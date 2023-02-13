@@ -30,22 +30,22 @@ export async function getRentals(_, res) {
 export async function insertRental(req, res) {
     const { customerId, gameId, daysRented } = req.body;
     const dateNow = dayjs();
-    
+
     try {
         const verifyCustomerId = await db.query('SELECT 1 FROM customers WHERE id = $1;', [customerId]);
         const gameById = await db.query('SELECT * FROM games WHERE id = $1;', [gameId]);
         const amountRentalsByGameId = await db.query(`SELECT count(*) FROM rentals WHERE "gameId" = $1;`, [gameId]);
-        
-        if (verifyCustomerId.rows.length === 0 || 
-            gameById.rows.length === 0 || 
+
+        if (verifyCustomerId.rows.length === 0 ||
+            gameById.rows.length === 0 ||
             amountRentalsByGameId.rows[0].count >= gameById.rows[0].stockTotal
         ) return res.sendStatus(400);
 
         const originalPrice = daysRented * gameById.rows[0].pricePerDay;
-    
+
         await db.query(
             `INSERT INTO rentals ("customerId", "gameId", "rentDate", "daysRented", "returnDate", "originalPrice", "delayFee") 
-            VALUES ($1,$2,$3,$4,$5,$6,$7);`,[customerId, gameId, dateNow, daysRented, null, originalPrice, null]
+            VALUES ($1,$2,$3,$4,$5,$6,$7);`, [customerId, gameId, dateNow, daysRented, null, originalPrice, null]
         );
         res.sendStatus(201);
     } catch (err) {
@@ -56,13 +56,14 @@ export async function insertRental(req, res) {
 export async function finishRental(req, res) {
     const { id } = req.params;
     const dateNow = dayjs();
-    
+
     try {
         const rentById = await db.query('SELECT * FROM rentals WHERE id = $1', [id]);
         if (rentById.rows.length === 0) return res.sendStatus(404);
         if (rentById.rows[0].returnDate !== null) return res.sendStatus(400);
-        const delayFee = rentById.rows[0].rentDate - dateNow;
-        await db.query(`UPDATE rentals SET ("returnDate", "delayFee") = ($1, $2) WHERE id = $;`,[dateNow, delayFee]);
+
+        const delayFee = dateNow - rentById.rows[0].rentDate;
+        await db.query(`UPDATE rentals SET ("returnDate", "delayFee") = ($1, $2) WHERE id = $3;`, [dateNow, delayFee, id]);
         res.send();
     } catch (err) {
         return res.status(500).send(err.message);
